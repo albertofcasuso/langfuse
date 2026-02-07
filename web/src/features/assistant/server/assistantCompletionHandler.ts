@@ -32,18 +32,6 @@ export default async function assistantCompletionHandler(req: NextRequest) {
       throw new InvalidRequestError("Conversation not found");
     }
 
-    // Save the user message
-    await createMessage({
-      conversationId: body.conversationId,
-      sender: ConversationMessageSender.USER,
-      content: body.content,
-    });
-
-    // Load full conversation history for LLM
-    const messages = await getConversationMessagesForLLM({
-      conversationId: body.conversationId,
-    });
-
     // Get LLM API key for the project
     const llmApiKey = await prisma.llmApiKeys.findFirst({
       where: {
@@ -65,6 +53,18 @@ export default async function assistantCompletionHandler(req: NextRequest) {
       );
     }
 
+    // Save the user message only after all preconditions are validated
+    await createMessage({
+      conversationId: body.conversationId,
+      sender: ConversationMessageSender.USER,
+      content: body.content,
+    });
+
+    // Load full conversation history for LLM
+    const messages = await getConversationMessagesForLLM({
+      conversationId: body.conversationId,
+    });
+
     // Call LLM with streaming
     const stream = await fetchLLMCompletion({
       llmConnection: parsedKey.data,
@@ -84,7 +84,7 @@ export default async function assistantCompletionHandler(req: NextRequest) {
     const [clientStream, captureStream] = stream.tee();
 
     // Background: accumulate the full response and save to DB
-    captureAndPersistResponse({
+    void captureAndPersistResponse({
       stream: captureStream,
       conversationId: body.conversationId,
     });
@@ -131,6 +131,7 @@ async function captureAndPersistResponse({
       if (done) break;
       fullResponse += decoder.decode(value, { stream: true });
     }
+    fullResponse += decoder.decode();
 
     if (fullResponse.length > 0) {
       await createMessage({
