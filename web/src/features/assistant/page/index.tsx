@@ -5,7 +5,7 @@ import { api } from "@/src/utils/api";
 export default function AssistantPage() {
   const projectId = useProjectIdFromURL();
 
-  const ping = api.assistant.ping.useQuery(
+  const conversations = api.assistant.listConversations.useQuery(
     { projectId: projectId ?? "" },
     { enabled: Boolean(projectId) },
   );
@@ -18,11 +18,9 @@ export default function AssistantPage() {
     >
       <div className="flex flex-col gap-2">
         <div className="text-sm text-muted-foreground">
-          Assistant feature scaffold.
-        </div>
-        <div className="text-sm">
-          API status:{" "}
-          {ping.isLoading ? "loading" : ping.data?.ok ? "ok" : "unavailable"}
+          {conversations.isLoading
+            ? "Loading conversations..."
+            : `${conversations.data?.length ?? 0} conversations`}
         </div>
       </div>
     </Page>
