@@ -94,6 +94,30 @@ Langfuse is an **open source LLM engineering** platform. It helps teams collabor
 
 - [Comprehensive API](https://langfuse.com/docs/api): Langfuse is frequently used to power bespoke LLMOps workflows while using the building blocks provided by Langfuse via the API. OpenAPI spec, Postman collection, and typed SDKs for Python, JS/TS are available.
 
+## 🧪 Assistant Challenge
+
+This repository contains an implementation-in-progress of an "Assistant" feature as part of the *Interactive AI - Fullstack* technical challenge.
+
+### Access
+
+- Assistant UI (project-scoped page): `/project/[projectId]/assistant` (see `/src/pages/project/[projectId]/assistant.tsx`)
+
+### Database migration (Postgres)
+
+Adds two tables and an enum:
+
+- `conversations`: `id`, `user_id`, `started_at`
+- `messages`: `id`, `conversation_id`, `sender`, `content`, `timestamp`
+- enum `ConversationMessageSender` (`USER` | `ASSISTANT`)
+
+Migration: `/packages/shared/prisma/migrations/20260207075648_assistant_migration/migration.sql`
+
+Apply migrations locally:
+
+```bash
+pnpm run db:migrate
+```
+
 ## 📦 Deploy Langfuse
 
 <img width="4856" height="1322" alt="Langfuse Deployment Options" src="https://github.com/user-attachments/assets/98f020c7-7a20-4264-a201-65c41a52a5d5" />
