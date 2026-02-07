@@ -5,6 +5,12 @@ export type Generated<T> =
     : ColumnType<T, T | undefined, T>;
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
+export const ConversationMessageSender = {
+  USER: "USER",
+  ASSISTANT: "ASSISTANT",
+} as const;
+export type ConversationMessageSender =
+  (typeof ConversationMessageSender)[keyof typeof ConversationMessageSender];
 export const ApiKeyScope = {
   ORGANIZATION: "ORGANIZATION",
   PROJECT: "PROJECT",
@@ -393,6 +399,11 @@ export type CommentReaction = {
   emoji: string;
   created_at: Generated<Timestamp>;
 };
+export type Conversation = {
+  id: string;
+  user_id: string;
+  started_at: Generated<Timestamp>;
+};
 export type CronJobs = {
   name: string;
   last_run: Timestamp | null;
@@ -666,6 +677,13 @@ export type MembershipInvitation = {
   invited_by_user_id: string | null;
   created_at: Generated<Timestamp>;
   updated_at: Generated<Timestamp>;
+};
+export type Message = {
+  id: string;
+  conversation_id: string;
+  sender: ConversationMessageSender;
+  content: string;
+  timestamp: Generated<Timestamp>;
 };
 export type MixpanelIntegration = {
   project_id: string;
@@ -943,6 +961,7 @@ export type DB = {
   cloud_spend_alerts: CloudSpendAlert;
   comment_reactions: CommentReaction;
   comments: Comment;
+  conversations: Conversation;
   cron_jobs: CronJobs;
   dashboard_widgets: DashboardWidget;
   dashboards: Dashboard;
@@ -959,6 +978,7 @@ export type DB = {
   llm_tools: LlmTool;
   media: Media;
   membership_invitations: MembershipInvitation;
+  messages: Message;
   mixpanel_integrations: MixpanelIntegration;
   models: Model;
   notification_preferences: NotificationPreference;
