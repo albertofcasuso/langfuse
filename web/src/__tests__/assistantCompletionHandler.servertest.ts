@@ -2,22 +2,14 @@
 
 import type { NextRequest } from "next/server";
 
-jest.mock(
-  "@/src/server/utils/authorizeRequest",
-  () => ({
-    authorizeRequestOrThrow: jest.fn(),
-  }),
-  { virtual: true },
-);
+jest.mock("../server/utils/authorizeRequest", () => ({
+  authorizeRequestOrThrow: jest.fn(),
+}));
 
-jest.mock(
-  "@/src/features/assistant/server/service",
-  () => ({
-    createMessage: jest.fn(),
-    getConversationMessagesForLLM: jest.fn(),
-  }),
-  { virtual: true },
-);
+jest.mock("../features/assistant/server/service", () => ({
+  createMessage: jest.fn(),
+  getConversationMessagesForLLM: jest.fn(),
+}));
 
 jest.mock("@langfuse/shared/src/db", () => ({
   prisma: {
@@ -48,11 +40,11 @@ jest.mock("@langfuse/shared/src/server", () => {
   };
 });
 
-import { authorizeRequestOrThrow } from "@/src/server/utils/authorizeRequest";
+import { authorizeRequestOrThrow } from "../server/utils/authorizeRequest";
 import {
   createMessage,
   getConversationMessagesForLLM,
-} from "@/src/features/assistant/server/service";
+} from "../features/assistant/server/service";
 import { prisma } from "@langfuse/shared/src/db";
 import {
   fetchLLMCompletion,
@@ -176,6 +168,11 @@ describe("assistantCompletionHandler", () => {
     mockFetchLLMCompletion.mockResolvedValue(
       createTextStream(["assistant response"]),
     );
+  });
+
+  afterEach(async () => {
+    // Wait for any async streaming/persistence operations to complete
+    await new Promise((resolve) => setTimeout(resolve, 100));
   });
 
   it("persists user message before loading full history and sends that history to the LLM", async () => {
