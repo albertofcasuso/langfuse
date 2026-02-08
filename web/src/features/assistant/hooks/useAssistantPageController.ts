@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo } from "react";
 import { useAssistantChatState } from "@/src/features/assistant/hooks/useAssistantChatState";
 import { useAssistantConversations } from "@/src/features/assistant/hooks/useAssistantConversations";
 import { useAssistantMessageActions } from "@/src/features/assistant/hooks/useAssistantMessageActions";
-import { useModelParams } from "@/src/features/playground/page/hooks/useModelParams";
+import { useAssistantModelParams } from "@/src/features/assistant/hooks/useAssistantModelParams";
 import useProjectIdFromURL from "@/src/hooks/useProjectIdFromURL";
 import { api } from "@/src/utils/api";
 import { getFinalModelParams } from "@/src/utils/getFinalModelParams";
@@ -11,7 +11,7 @@ import { getFinalModelParams } from "@/src/utils/getFinalModelParams";
 export const useAssistantPageController = () => {
   const projectId = useProjectIdFromURL();
   const utils = api.useUtils();
-  const modelParamsContext = useModelParams("assistant"); //TODO: refactor hook!!!!
+  const modelParamsContext = useAssistantModelParams();
 
   const {
     selectedConversationId,
