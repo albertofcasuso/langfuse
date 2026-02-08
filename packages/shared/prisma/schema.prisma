@@ -207,6 +207,7 @@ model Project {
   PendingDeletion           PendingDeletion[]
   AnnotationQueueAssignment AnnotationQueueAssignment[]
   NotificationPreference    NotificationPreference[]
+  conversations             Conversation[]
 
   @@index([orgId])
   @@map("projects")
