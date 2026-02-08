@@ -1,6 +1,10 @@
 import { prisma } from "@langfuse/shared/src/db";
 import { ConversationMessageSender } from "@langfuse/shared";
-import { ChatMessageRole, ChatMessageType } from "@langfuse/shared/src/server";
+import {
+  ChatMessageRole,
+  ChatMessageType,
+  instrumentAsync,
+} from "@langfuse/shared/src/server";
 import type { ChatMessage } from "@langfuse/shared/src/server";
 
 export async function listConversations({
@@ -10,14 +14,27 @@ export async function listConversations({
   userId: string;
   projectId: string;
 }) {
-  return prisma.conversation.findMany({
-    where: { userId, projectId },
-    orderBy: { startedAt: "desc" },
-    select: {
-      id: true,
-      startedAt: true,
+  return instrumentAsync(
+    { name: "assistant-service-list-conversations" },
+    async (span) => {
+      span.setAttributes({
+        "assistant.project_id": projectId,
+        "assistant.user_id": userId,
+      });
+
+      const conversations = await prisma.conversation.findMany({
+        where: { userId, projectId },
+        orderBy: { startedAt: "desc" },
+        select: {
+          id: true,
+          startedAt: true,
+        },
+      });
+
+      span.setAttribute("assistant.conversation_count", conversations.length);
+      return conversations;
     },
-  });
+  );
 }
 
 export async function getConversation({
@@ -29,14 +46,33 @@ export async function getConversation({
   userId: string;
   projectId: string;
 }) {
-  return prisma.conversation.findFirst({
-    where: { id: conversationId, userId, projectId },
-    include: {
-      messages: {
-        orderBy: { timestamp: "asc" },
-      },
+  return instrumentAsync(
+    { name: "assistant-service-get-conversation" },
+    async (span) => {
+      span.setAttributes({
+        "assistant.project_id": projectId,
+        "assistant.user_id": userId,
+        "assistant.conversation_id": conversationId,
+      });
+
+      const conversation = await prisma.conversation.findFirst({
+        where: { id: conversationId, userId, projectId },
+        include: {
+          messages: {
+            orderBy: { timestamp: "asc" },
+          },
+        },
+      });
+
+      span.setAttribute("assistant.conversation_found", Boolean(conversation));
+      span.setAttribute(
+        "assistant.message_count",
+        conversation?.messages.length ?? 0,
+      );
+
+      return conversation;
     },
-  });
+  );
 }
 
 export async function createConversation({
@@ -46,10 +82,23 @@ export async function createConversation({
   userId: string;
   projectId: string;
 }) {
-  return prisma.conversation.create({
-    data: { userId, projectId },
-    select: { id: true },
-  });
+  return instrumentAsync(
+    { name: "assistant-service-create-conversation" },
+    async (span) => {
+      span.setAttributes({
+        "assistant.project_id": projectId,
+        "assistant.user_id": userId,
+      });
+
+      const conversation = await prisma.conversation.create({
+        data: { userId, projectId },
+        select: { id: true },
+      });
+
+      span.setAttribute("assistant.conversation_id", conversation.id);
+      return conversation;
+    },
+  );
 }
 
 export async function createMessage({
@@ -61,9 +110,23 @@ export async function createMessage({
   sender: ConversationMessageSender;
   content: string;
 }) {
-  return prisma.message.create({
-    data: { conversationId, sender, content },
-  });
+  return instrumentAsync(
+    { name: "assistant-service-create-message" },
+    async (span) => {
+      span.setAttributes({
+        "assistant.conversation_id": conversationId,
+        "assistant.message_sender": sender,
+        "assistant.message_content_length": content.length,
+      });
+
+      const message = await prisma.message.create({
+        data: { conversationId, sender, content },
+      });
+
+      span.setAttribute("assistant.message_id", message.id);
+      return message;
+    },
+  );
 }
 
 export async function getConversationMessagesForLLM({
@@ -71,23 +134,43 @@ export async function getConversationMessagesForLLM({
 }: {
   conversationId: string;
 }): Promise<ChatMessage[]> {
-  const messages = await prisma.message.findMany({
-    where: { conversationId },
-    orderBy: { timestamp: "asc" },
-  });
+  return instrumentAsync(
+    { name: "assistant-service-get-messages-for-llm" },
+    async (span) => {
+      span.setAttribute("assistant.conversation_id", conversationId);
 
-  return messages.map((m) => {
-    if (m.sender === ConversationMessageSender.USER) {
-      return {
-        type: ChatMessageType.User as const,
-        role: ChatMessageRole.User as const,
-        content: m.content,
-      };
-    }
-    return {
-      type: ChatMessageType.AssistantText as const,
-      role: ChatMessageRole.Assistant as const,
-      content: m.content,
-    };
-  });
+      const messages = await prisma.message.findMany({
+        where: { conversationId },
+        orderBy: { timestamp: "asc" },
+      });
+
+      let userMessages = 0;
+      let assistantMessages = 0;
+
+      const mappedMessages = messages.map((m) => {
+        if (m.sender === ConversationMessageSender.USER) {
+          userMessages += 1;
+          return {
+            type: ChatMessageType.User as const,
+            role: ChatMessageRole.User as const,
+            content: m.content,
+          };
+        }
+        assistantMessages += 1;
+        return {
+          type: ChatMessageType.AssistantText as const,
+          role: ChatMessageRole.Assistant as const,
+          content: m.content,
+        };
+      });
+
+      span.setAttributes({
+        "assistant.message_count": messages.length,
+        "assistant.user_message_count": userMessages,
+        "assistant.assistant_message_count": assistantMessages,
+      });
+
+      return mappedMessages;
+    },
+  );
 }
