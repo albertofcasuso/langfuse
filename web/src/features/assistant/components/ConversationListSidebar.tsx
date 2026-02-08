@@ -71,7 +71,7 @@ export const ConversationListSidebar = ({
                 )}
               >
                 <p className="text-xs font-medium text-foreground">
-                  Conversation
+                  {`Conversation ${conversation.id.slice(4, 8)}`}
                 </p>
                 <p className="mt-0.5 text-xs text-muted-foreground">
                   {formatDate(conversation.startedAt)}
