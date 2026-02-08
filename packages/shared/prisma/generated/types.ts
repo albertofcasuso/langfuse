@@ -402,6 +402,7 @@ export type CommentReaction = {
 export type Conversation = {
   id: string;
   user_id: string;
+  project_id: string;
   started_at: Generated<Timestamp>;
 };
 export type CronJobs = {
