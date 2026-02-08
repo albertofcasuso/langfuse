@@ -187,6 +187,9 @@ describe("assistantCompletionHandler", () => {
     const response = await assistantCompletionHandler(buildRequest());
 
     expect(response.status).toBe(200);
+    expect(response.headers.get("x-langfuse-trace-id")).toMatch(
+      /^[a-f0-9]{32}$/,
+    );
     expect(mockCreateMessage).toHaveBeenNthCalledWith(1, {
       conversationId: baseBody.conversationId,
       sender: ConversationMessageSender.USER,
@@ -208,6 +211,17 @@ describe("assistantCompletionHandler", () => {
     expect(mockFetchLLMCompletion).toHaveBeenCalledWith(
       expect.objectContaining({
         messages: llmMessages,
+        traceSinkParams: expect.objectContaining({
+          targetProjectId: baseBody.projectId,
+          traceName: "assistant-completion",
+          environment: "langfuse-assistant",
+          userId: "user-id",
+          metadata: expect.objectContaining({
+            assistant_conversation_id: baseBody.conversationId,
+            assistant_model_provider: baseBody.modelParams.provider,
+            assistant_model_name: baseBody.modelParams.model,
+          }),
+        }),
         streaming: true,
       }),
     );

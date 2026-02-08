@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto";
 import { StreamingTextResponse } from "ai";
 import { NextResponse, type NextRequest } from "next/server";
 
@@ -69,7 +70,9 @@ export default async function assistantCompletionHandler(req: NextRequest) {
       conversationId: body.conversationId,
     });
 
-    // Call LLM with streaming
+    const llmTraceId = randomBytes(16).toString("hex");
+
+    // Call LLM with streaming and export an internal Langfuse trace
     const stream = await fetchLLMCompletion({
       llmConnection: parsedKey.data,
       messages,
@@ -80,6 +83,18 @@ export default async function assistantCompletionHandler(req: NextRequest) {
         temperature: body.modelParams.temperature,
         max_tokens: body.modelParams.max_tokens,
         top_p: body.modelParams.top_p,
+      },
+      traceSinkParams: {
+        targetProjectId: body.projectId,
+        traceId: llmTraceId,
+        traceName: "assistant-completion",
+        environment: "langfuse-assistant",
+        userId,
+        metadata: {
+          assistant_conversation_id: body.conversationId,
+          assistant_model_provider: body.modelParams.provider,
+          assistant_model_name: body.modelParams.model,
+        },
       },
       streaming: true,
     });
@@ -93,7 +108,11 @@ export default async function assistantCompletionHandler(req: NextRequest) {
       conversationId: body.conversationId,
     });
 
-    return new StreamingTextResponse(clientStream);
+    return new StreamingTextResponse(clientStream, {
+      headers: {
+        "x-langfuse-trace-id": llmTraceId,
+      },
+    });
   } catch (err) {
     logger.error("Failed to handle assistant completion", err);
 
