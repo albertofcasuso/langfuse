@@ -3,9 +3,15 @@ import { ConversationMessageSender } from "@langfuse/shared";
 import { ChatMessageRole, ChatMessageType } from "@langfuse/shared/src/server";
 import type { ChatMessage } from "@langfuse/shared/src/server";
 
-export async function listConversations({ userId }: { userId: string }) {
+export async function listConversations({
+  userId,
+  projectId,
+}: {
+  userId: string;
+  projectId: string;
+}) {
   return prisma.conversation.findMany({
-    where: { userId },
+    where: { userId, projectId },
     orderBy: { startedAt: "desc" },
     select: {
       id: true,
@@ -17,12 +23,14 @@ export async function listConversations({ userId }: { userId: string }) {
 export async function getConversation({
   conversationId,
   userId,
+  projectId,
 }: {
   conversationId: string;
   userId: string;
+  projectId: string;
 }) {
   return prisma.conversation.findFirst({
-    where: { id: conversationId, userId },
+    where: { id: conversationId, userId, projectId },
     include: {
       messages: {
         orderBy: { timestamp: "asc" },
@@ -31,9 +39,15 @@ export async function getConversation({
   });
 }
 
-export async function createConversation({ userId }: { userId: string }) {
+export async function createConversation({
+  userId,
+  projectId,
+}: {
+  userId: string;
+  projectId: string;
+}) {
   return prisma.conversation.create({
-    data: { userId },
+    data: { userId, projectId },
     select: { id: true },
   });
 }
