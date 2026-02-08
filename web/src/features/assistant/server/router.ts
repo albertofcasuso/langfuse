@@ -25,7 +25,10 @@ export const assistantRouter = createTRPCRouter({
         scope: "project:read",
       });
 
-      return listConversations({ userId: ctx.session.user.id });
+      return listConversations({
+        userId: ctx.session.user.id,
+        projectId: input.projectId,
+      });
     }),
 
   getConversation: protectedProjectProcedure
@@ -40,6 +43,7 @@ export const assistantRouter = createTRPCRouter({
       const conversation = await getConversation({
         conversationId: input.conversationId,
         userId: ctx.session.user.id,
+        projectId: input.projectId,
       });
 
       if (!conversation) {
@@ -61,6 +65,9 @@ export const assistantRouter = createTRPCRouter({
         scope: "project:read",
       });
 
-      return createConversation({ userId: ctx.session.user.id });
+      return createConversation({
+        userId: ctx.session.user.id,
+        projectId: input.projectId,
+      });
     }),
 });

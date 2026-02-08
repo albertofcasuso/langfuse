@@ -147,6 +147,7 @@ describe("assistantCompletionHandler", () => {
     mockConversationFindFirst.mockResolvedValue({
       id: baseBody.conversationId,
       userId: "user-id",
+      projectId: baseBody.projectId,
     });
     mockLlmApiKeysFindFirst.mockResolvedValue({
       id: "llm-key-id",
@@ -190,6 +191,13 @@ describe("assistantCompletionHandler", () => {
       conversationId: baseBody.conversationId,
       sender: ConversationMessageSender.USER,
       content: baseBody.content,
+    });
+    expect(mockConversationFindFirst).toHaveBeenCalledWith({
+      where: {
+        id: baseBody.conversationId,
+        userId: "user-id",
+        projectId: baseBody.projectId,
+      },
     });
     expect(mockGetConversationMessagesForLLM).toHaveBeenCalledWith({
       conversationId: baseBody.conversationId,

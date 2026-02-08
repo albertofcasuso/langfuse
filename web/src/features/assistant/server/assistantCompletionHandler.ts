@@ -25,7 +25,11 @@ export default async function assistantCompletionHandler(req: NextRequest) {
 
     // Verify the conversation belongs to this user
     const conversation = await prisma.conversation.findFirst({
-      where: { id: body.conversationId, userId },
+      where: {
+        id: body.conversationId,
+        userId,
+        projectId: body.projectId,
+      },
     });
 
     if (!conversation) {
