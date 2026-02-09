@@ -126,13 +126,17 @@ Conversation and message data is persisted in:
 
 Indexes added for common read paths:
 
-- `conversations(user_id, started_at DESC)` to fetch recent conversations
+- `conversations(user_id, project_id, started_at DESC)` to fetch recent conversations
 - `messages(conversation_id, timestamp ASC)` to render conversation history in order
 
 Migrations:
 
-- `packages/shared/prisma/migrations/20260207075648_assistant_migration/migration.sql`
-- `packages/shared/prisma/migrations/20260208075722_assistant_projectid_addition/migration.sql`
+- `packages/shared/prisma/migrations/20260207075648_assistant_migration/migration.sql`  
+  Creates the Assistant data model: `conversations`, `messages`, `ConversationMessageSender`, and base indexes/FKs.
+- `packages/shared/prisma/migrations/20260208075722_assistant_projectid_addition/migration.sql`  
+  Adds `project_id` to `conversations` and links it to `projects` for project-level scoping.
+- `packages/shared/prisma/migrations/20260209141211_added/migration.sql`  
+  Replaces the original conversations index with a composite index on `(user_id, project_id, started_at DESC)`.
 
 ### Local testing
 
