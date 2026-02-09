@@ -14,27 +14,14 @@ export async function listConversations({
   userId: string;
   projectId: string;
 }) {
-  return instrumentAsync(
-    { name: "assistant-service-list-conversations" },
-    async (span) => {
-      span.setAttributes({
-        "assistant.project_id": projectId,
-        "assistant.user_id": userId,
-      });
-
-      const conversations = await prisma.conversation.findMany({
-        where: { userId, projectId },
-        orderBy: { startedAt: "desc" },
-        select: {
-          id: true,
-          startedAt: true,
-        },
-      });
-
-      span.setAttribute("assistant.conversation_count", conversations.length);
-      return conversations;
+  return prisma.conversation.findMany({
+    where: { userId, projectId },
+    orderBy: { startedAt: "desc" },
+    select: {
+      id: true,
+      startedAt: true,
     },
-  );
+  });
 }
 
 export async function getConversation({
@@ -46,33 +33,14 @@ export async function getConversation({
   userId: string;
   projectId: string;
 }) {
-  return instrumentAsync(
-    { name: "assistant-service-get-conversation" },
-    async (span) => {
-      span.setAttributes({
-        "assistant.project_id": projectId,
-        "assistant.user_id": userId,
-        "assistant.conversation_id": conversationId,
-      });
-
-      const conversation = await prisma.conversation.findFirst({
-        where: { id: conversationId, userId, projectId },
-        include: {
-          messages: {
-            orderBy: { timestamp: "asc" },
-          },
-        },
-      });
-
-      span.setAttribute("assistant.conversation_found", Boolean(conversation));
-      span.setAttribute(
-        "assistant.message_count",
-        conversation?.messages.length ?? 0,
-      );
-
-      return conversation;
+  return prisma.conversation.findFirst({
+    where: { id: conversationId, userId, projectId },
+    include: {
+      messages: {
+        orderBy: { timestamp: "asc" },
+      },
     },
-  );
+  });
 }
 
 export async function createConversation({
@@ -82,23 +50,10 @@ export async function createConversation({
   userId: string;
   projectId: string;
 }) {
-  return instrumentAsync(
-    { name: "assistant-service-create-conversation" },
-    async (span) => {
-      span.setAttributes({
-        "assistant.project_id": projectId,
-        "assistant.user_id": userId,
-      });
-
-      const conversation = await prisma.conversation.create({
-        data: { userId, projectId },
-        select: { id: true },
-      });
-
-      span.setAttribute("assistant.conversation_id", conversation.id);
-      return conversation;
-    },
-  );
+  return prisma.conversation.create({
+    data: { userId, projectId },
+    select: { id: true },
+  });
 }
 
 export async function createMessage({
