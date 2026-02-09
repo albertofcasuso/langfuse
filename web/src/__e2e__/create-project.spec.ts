@@ -102,7 +102,7 @@ test.describe("Create project", () => {
     const projectId = projectUrl.pathname.split("/")[2];
 
     // check that the project exists by navigating to its home screen
-    await page.goto("/project/" + projectId, { waitUntil: "networkidle" });
+    await page.goto("/project/" + projectId);
     await expect(page).toHaveURL(new RegExp(`/project/${projectId}`));
 
     await expect(
