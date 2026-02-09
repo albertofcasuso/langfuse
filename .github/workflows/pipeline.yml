@@ -664,7 +664,7 @@ jobs:
         prettier-check,
         tests-web-sync,
         tests-worker,
-        test-worker-llm-connections,
+        # test-worker-llm-connections # Disabled for InteractiveAI demo - requires secrets. Can be re-enabled later.
         # e2e-tests, # Temporarily disabled - flaky timeouts
         test-docker-build,
         e2e-server-tests,
