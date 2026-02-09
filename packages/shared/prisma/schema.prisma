@@ -105,7 +105,7 @@ model Conversation {
   messages Message[]
   project  Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  @@index([userId, startedAt(sort: Desc)])
+  @@index([userId, projectId, startedAt(sort: Desc)])
   @@map("conversations")
 }
 
