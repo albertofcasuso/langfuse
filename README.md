@@ -80,7 +80,7 @@ Langfuse is an **open source LLM engineering** platform. It helps teams collabor
 
 <img width="4856" height="1944" alt="Langfuse Overview" src="https://github.com/user-attachments/assets/5dac68ef-d546-49fb-b06f-cfafc19282e3" />
 
-- [Assistant] Here to showcase my abilities as a FullStack Developer for the InteractiveAI interview. 
+- [Assistant (Experimental)](#-assistant-experimental): Project-scoped assistant with persisted conversations, token-streamed responses, and built-in tracing.
 
 - [LLM Application Observability](https://langfuse.com/docs/tracing): Instrument your app and start ingesting traces to Langfuse, thereby tracking LLM calls and other relevant logic in your app such as retrieval, embedding, or agent actions. Inspect and debug complex logs and user sessions. Try the interactive [demo](https://langfuse.com/docs/demo) to see this in action.
 
@@ -94,28 +94,86 @@ Langfuse is an **open source LLM engineering** platform. It helps teams collabor
 
 - [Comprehensive API](https://langfuse.com/docs/api): Langfuse is frequently used to power bespoke LLMOps workflows while using the building blocks provided by Langfuse via the API. OpenAPI spec, Postman collection, and typed SDKs for Python, JS/TS are available.
 
-## 🧪 Assistant Challenge
+## 🤖 Assistant (Experimental)
 
-This repository contains an implementation-in-progress of an "Assistant" feature as part of the *Interactive AI - Fullstack* technical challenge.
+Langfuse includes an experimental, project-scoped Assistant to chat with your configured LLM providers directly from the product UI.
 
 ### Access
 
-- Assistant UI (project-scoped page): `/project/[projectId]/assistant` (see `/src/pages/project/[projectId]/assistant.tsx`)
+- Sidebar: `Prompt Management` -> `Assistant`
+- URL: `/project/[projectId]/assistant`
+- Entry page: `web/src/pages/project/[projectId]/assistant.tsx`
 
-### Database migration (Postgres)
+### Architecture
 
-Adds two tables and an enum:
+- Frontend feature module in `web/src/features/assistant`
+- Internal data API over tRPC (`assistant` router):
+  - `listConversations`
+  - `getConversation`
+  - `createConversation`
+- Streaming generation endpoint over App Router: `POST /api/assistant`
+  - Uses `ReadableStream` for token-by-token UI updates
+  - Persists user and assistant messages in Postgres
+  - Returns `x-langfuse-trace-id` to correlate assistant generations with traces
 
-- `conversations`: `id`, `user_id`, `started_at`
+### Data model (Postgres)
+
+Conversation and message data is persisted in:
+
+- `conversations`: `id`, `user_id`, `project_id`, `started_at`
 - `messages`: `id`, `conversation_id`, `sender`, `content`, `timestamp`
-- enum `ConversationMessageSender` (`USER` | `ASSISTANT`)
+- enum `ConversationMessageSender`: `USER`, `ASSISTANT`
 
-Migration: `/packages/shared/prisma/migrations/20260207075648_assistant_migration/migration.sql`
+Indexes added for common read paths:
 
-Apply migrations locally:
+- `conversations(user_id, started_at DESC)` to fetch recent conversations
+- `messages(conversation_id, timestamp ASC)` to render conversation history in order
+
+Migrations:
+
+- `packages/shared/prisma/migrations/20260207075648_assistant_migration/migration.sql`
+- `packages/shared/prisma/migrations/20260208075722_assistant_projectid_addition/migration.sql`
+
+### Local testing
+
+Checkout the assistant feature branch and run the following commands to test the assistant locally:
+
+```git checkout feat/assistant
+
+```
+
+1. Start local dependencies:
 
 ```bash
-pnpm run db:migrate
+pnpm i && pnpm run dx
+```
+
+- Use pnpm run dx if it's the first time you're running the project, to ensure all dependencies are properly built.
+
+- If you're running pnpm run dx it will automatically apply the migrations and generate the prisma client, so you can skip step 2 and 3 below.
+
+- For subsequent runs, pnpm run dev will work directly.
+
+2. Apply DB migrations and install prisma client:
+
+```bash
+pnpm run db:migrate && npx prisma generate
+```
+
+3. Start the app:
+
+```bash
+pnpm run dev
+```
+
+4. Open `http://localhost:3000/project/[projectId]/assistant`, select a model, and send a message.
+
+5. Optional checks:
+
+```bash
+pnpm run lint
+pnpm --filter web test-client -- assistant-ui.clienttest.tsx useAssistantChatState.clienttest.tsx
+pnpm --filter web test-sync -- assistantCompletionHandler.servertest.ts
 ```
 
 ## 📦 Deploy Langfuse
@@ -315,7 +373,7 @@ Top open-source Python projects that use Langfuse, ranked by stars ([Source](htt
 | <img class="avatar mr-2" src="https://avatars.githubusercontent.com/u/6154722?s=40&v=4" width="20" height="20" alt=""> &nbsp; [microsoft](https://github.com/microsoft) / [ai-agents-for-beginners](https://github.com/microsoft/ai-agents-for-beginners)                                                      |  38012 |
 | <img class="avatar mr-2" src="https://avatars.githubusercontent.com/u/139558948?s=40&v=4" width="20" height="20" alt=""> &nbsp; [chatchat-space](https://github.com/chatchat-space) / [Langchain-Chatchat](https://github.com/chatchat-space/Langchain-Chatchat)                                               |  36071 |
 | <img class="avatar mr-2" src="https://avatars.githubusercontent.com/u/31035808?s=40&v=4" width="20" height="20" alt=""> &nbsp; [mindsdb](https://github.com/mindsdb) / [mindsdb](https://github.com/mindsdb/mindsdb)                                                                                           |  35669 |
-| <img class="avatar mr-2" src="https://avatars.githubusercontent.com/u/169401942?s=40&v=4" width="20" height="20" alt=""> &nbsp; [danny-avila](https://github.com/danny-avila) / [LibreChat](https://github.com/danny-avila/LibreChat)                                                                            |  33142 |
+| <img class="avatar mr-2" src="https://avatars.githubusercontent.com/u/169401942?s=40&v=4" width="20" height="20" alt=""> &nbsp; [danny-avila](https://github.com/danny-avila) / [LibreChat](https://github.com/danny-avila/LibreChat)                                                                          |  33142 |
 | <img class="avatar mr-2" src="https://avatars.githubusercontent.com/u/121462774?s=40&v=4" width="20" height="20" alt=""> &nbsp; [BerriAI](https://github.com/BerriAI) / [litellm](https://github.com/BerriAI/litellm)                                                                                          |  28726 |
 | <img class="avatar mr-2" src="https://avatars.githubusercontent.com/u/157326433?s=40&v=4" width="20" height="20" alt=""> &nbsp; [onlook-dev](https://github.com/onlook-dev) / [onlook](https://github.com/onlook-dev/onlook)                                                                                   |  22447 |
 | <img class="avatar mr-2" src="https://avatars.githubusercontent.com/u/487568?s=40&v=4" width="20" height="20" alt=""> &nbsp; [NixOS](https://github.com/NixOS) / [nixpkgs](https://github.com/NixOS/nixpkgs)                                                                                                   |  21748 |
