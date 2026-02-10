@@ -445,6 +445,12 @@ export async function fetchLLMCompletion(
     if (streaming)
       return chatModel
         .pipe(new BytesOutputParser())
+        .withListeners({
+          onEnd: async () => {
+            // Process any remaining traced events after stream completion
+            await processTracedEvents();
+          },
+        })
         .stream(finalMessages, runConfig);
 
     const completion = await chatModel
