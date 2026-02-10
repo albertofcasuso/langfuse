@@ -91,57 +91,6 @@ type FetchLLMCompletionParams = LLMCompletionParams & {
   tools?: LLMToolDefinition[];
 };
 
-const wrapStreamWithTraceFinalization = (
-  stream: IterableReadableStream<Uint8Array>,
-  processTracedEvents: ProcessTracedEvents,
-): IterableReadableStream<Uint8Array> => {
-  const reader = stream.getReader();
-  let finalized = false;
-
-  const releaseReader = () => {
-    try {
-      reader.releaseLock();
-    } catch {
-      // No-op: reader may already be released.
-    }
-  };
-
-  const finalizeOnce = async () => {
-    if (finalized) return;
-    finalized = true;
-    await processTracedEvents();
-  };
-
-  return new ReadableStream<Uint8Array>({
-    async pull(controller) {
-      try {
-        const { done, value } = await reader.read();
-
-        if (done) {
-          releaseReader();
-          controller.close();
-          await finalizeOnce();
-          return;
-        }
-
-        controller.enqueue(value);
-      } catch (error) {
-        releaseReader();
-        controller.error(error);
-        await finalizeOnce();
-      }
-    },
-    async cancel(reason) {
-      try {
-        await reader.cancel(reason);
-      } finally {
-        releaseReader();
-        await finalizeOnce();
-      }
-    },
-  }) as IterableReadableStream<Uint8Array>;
-};
-
 export async function fetchLLMCompletion(
   params: LLMCompletionParams & {
     streaming: true;
@@ -467,8 +416,6 @@ export async function fetchLLMCompletion(
     metadata: traceSinkParams?.metadata,
   };
 
-  let shouldFinalizeTracingInFinally = true;
-
   try {
     // Important: await all generations in the try block as otherwise `processTracedEvents` will run too early in finally block
     if (params.structuredOutputSchema) {
@@ -495,14 +442,10 @@ export async function fetchLLMCompletion(
       return parsed.data;
     }
 
-    if (streaming) {
-      const stream = await chatModel
+    if (streaming)
+      return chatModel
         .pipe(new BytesOutputParser())
         .stream(finalMessages, runConfig);
-
-      shouldFinalizeTracingInFinally = false;
-      return wrapStreamWithTraceFinalization(stream, processTracedEvents);
-    }
 
     const completion = await chatModel
       .pipe(new StringOutputParser())
@@ -559,9 +502,7 @@ export async function fetchLLMCompletion(
       isRetryable,
     });
   } finally {
-    if (shouldFinalizeTracingInFinally) {
-      await processTracedEvents();
-    }
+    await processTracedEvents();
   }
 }
 
