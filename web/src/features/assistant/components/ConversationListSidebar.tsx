@@ -27,7 +27,7 @@ export const ConversationListSidebar = ({
   onCreateConversation,
 }: ConversationListSidebarProps) => {
   return (
-    <aside className="flex h-full w-full flex-col border-b md:w-80 md:min-w-80 md:border-b-0 md:border-r">
+    <aside className="flex h-64 w-full shrink-0 flex-col border-b md:h-full md:w-80 md:min-w-80 md:border-b-0 md:border-r">
       <div className="border-b p-3">
         <Button
           className="w-full justify-start gap-2"
