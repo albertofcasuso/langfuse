@@ -3,7 +3,8 @@ import { useCallback, useEffect, useMemo } from "react";
 import { useAssistantChatState } from "@/src/features/assistant/hooks/useAssistantChatState";
 import { useAssistantConversations } from "@/src/features/assistant/hooks/useAssistantConversations";
 import { useAssistantMessageActions } from "@/src/features/assistant/hooks/useAssistantMessageActions";
-import { useAssistantModelParams } from "@/src/features/assistant/hooks/useAssistantModelParams";
+//INTERACTIVEAI: don't like the cross reference but it is used like that on other features (see evals and experiments)
+import { useModelParams } from "@/src/features/playground/page/hooks/useModelParams";
 import useProjectIdFromURL from "@/src/hooks/useProjectIdFromURL";
 import { api } from "@/src/utils/api";
 import { getFinalModelParams } from "@/src/utils/getFinalModelParams";
@@ -11,7 +12,7 @@ import { getFinalModelParams } from "@/src/utils/getFinalModelParams";
 export const useAssistantPageController = () => {
   const projectId = useProjectIdFromURL();
   const utils = api.useUtils();
-  const modelParamsContext = useAssistantModelParams();
+  const modelParamsContext = useModelParams();
 
   const {
     selectedConversationId,
