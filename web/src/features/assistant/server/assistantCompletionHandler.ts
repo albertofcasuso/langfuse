@@ -18,6 +18,7 @@ import {
   logger,
   fetchLLMCompletion,
 } from "@langfuse/shared/src/server";
+import { LangfuseInternalTraceEnvironment } from "@langfuse/shared/src/server";
 
 export default async function assistantCompletionHandler(req: NextRequest) {
   try {
@@ -88,7 +89,7 @@ export default async function assistantCompletionHandler(req: NextRequest) {
         targetProjectId: body.projectId,
         traceId: llmTraceId,
         traceName: "assistant-completion",
-        environment: "langfuse-assistant",
+        environment: LangfuseInternalTraceEnvironment.Assistant,
         userId,
         metadata: {
           assistant_conversation_id: body.conversationId,

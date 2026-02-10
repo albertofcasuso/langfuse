@@ -1,6 +1,7 @@
 /** @jest-environment node */
 
 import type { NextRequest } from "next/server";
+import { LangfuseInternalTraceEnvironment } from "@langfuse/shared/src/server";
 
 jest.mock("../server/utils/authorizeRequest", () => ({
   authorizeRequestOrThrow: jest.fn(),
@@ -214,7 +215,7 @@ describe("assistantCompletionHandler", () => {
         traceSinkParams: expect.objectContaining({
           targetProjectId: baseBody.projectId,
           traceName: "assistant-completion",
-          environment: "langfuse-assistant",
+          environment: LangfuseInternalTraceEnvironment.Assistant,
           userId: "user-id",
           metadata: expect.objectContaining({
             assistant_conversation_id: baseBody.conversationId,
