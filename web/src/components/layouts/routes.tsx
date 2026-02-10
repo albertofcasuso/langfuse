@@ -139,6 +139,14 @@ export const ROUTES: Route[] = [
     section: RouteSection.Main,
   },
   {
+    title: "Assistant",
+    pathname: "/project/[projectId]/assistant",
+    icon: Lightbulb,
+    productModule: "prompt-management",
+    group: RouteGroup.PromptManagement,
+    section: RouteSection.Main,
+  },
+  {
     title: "Scores",
     pathname: `/project/[projectId]/scores`,
     group: RouteGroup.Evaluation,
